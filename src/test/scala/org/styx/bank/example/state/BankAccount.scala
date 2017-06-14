@@ -5,6 +5,6 @@ import org.styx.state.State
 import org.styx.state.State.AggregationId
 
 /**
-  * @author Gabriel Francisco <peo_gfsilva@uolinc.com>
+  * @author Gabriel Francisco <gabfssilva@gmail.com>
   */
 case class BankAccount(aggregationId: AggregationId) extends DynamicData with State

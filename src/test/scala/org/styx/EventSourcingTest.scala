@@ -11,7 +11,7 @@ import org.styx.exceptions.InvalidExecutionException
 import org.styx.player.EventPlayer._
 
 /**
-  * @author Gabriel Francisco <peo_gfsilva@uolinc.com>
+  * @author Gabriel Francisco <gabfssilva@gmail.com>
   */
 class EventSourcingTest extends FeatureSpec with Matchers {
   feature("Creating an account") {

@@ -4,7 +4,7 @@ import org.styx.bank.example.state.BankAccount
 import org.styx.store.{EventStore, InMemoryEventStore}
 
 /**
-  * @author Gabriel Francisco <peo_gfsilva@uolinc.com>
+  * @author Gabriel Francisco <gabfssilva@gmail.com>
   */
 object BankAccountEventStore {
   implicit val eventStore: EventStore[BankAccount] = new InMemoryEventStore[BankAccount]
