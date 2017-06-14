@@ -4,13 +4,13 @@ A simple event sourcing library written in Scala.
 The following example is based on: https://ookami86.github.io/event-sourcing-in-practice/
 
 
-##The state
+## The state
 
 ```scala
 case class BankAccount(aggregationId: AggregationId) extends DynamicData with State
 ```
 
-##The event store
+## The event store
 
 ```scala
 object BankAccountEventStore {
@@ -18,7 +18,7 @@ object BankAccountEventStore {
 }
 ```
 
-##The events
+## The events
 
 ```scala
 case class BankAccountCreated() extends Event[BankAccount] {
@@ -80,7 +80,7 @@ case class BankAccountClosed() extends Event[BankAccount] {
 }
 ```
 
-The commands
+## The commands
 
 ```scala
 object CreateAccountCommand extends Command[Request, BankAccount] {
@@ -143,7 +143,7 @@ object CloseCommand extends Command[Request, BankAccount] {
 }
 ```
 
-####Commands as functions
+#### Commands as functions
 
 ```scala
 object BankAccountCommands {
@@ -155,7 +155,7 @@ object BankAccountCommands {
 }
 ```
 
-##Running
+## Running
 
 ```scala
 class EventSourcingTest extends FeatureSpec with Matchers {
