@@ -4,14 +4,17 @@ import org.styx.bank.example.events.WithdrawalPerformed
 import org.styx.bank.example.state.BankAccount
 import org.styx.command.Command
 import org.styx.model.Request
-
 import org.styx.bank.example.store.BankAccountEventStore._
 
-object WithdrawalCommand extends Command[Request, BankAccount] {
+import scala.concurrent.{ExecutionContext, Future}
+
+class WithdrawalCommand(implicit override val executionContext: ExecutionContext) extends Command[Request, BankAccount] {
   override def execute: ExecutionProduce = (request) => (_) => {
-    val event = WithdrawalPerformed()
-    event.amount = request.amount
-    event
+    Future {
+      val event = WithdrawalPerformed()
+      event.amount = request.amount
+      event
+    }
   }
 
   override def validate: ValidationProduce =

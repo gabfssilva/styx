@@ -1,14 +1,20 @@
 package org.styx
 
 import java.util.UUID
+import java.util.concurrent.Executors
 
 import org.scalatest.{FeatureSpec, Matchers}
 import org.styx.bank.example.commands.BankAccountCommands._
 import org.styx.bank.example.state.BankAccount
-import org.styx.model.{Event, Request}
 import org.styx.bank.example.store.BankAccountEventStore._
 import org.styx.exceptions.InvalidExecutionException
+import org.styx.model.Request
 import org.styx.player.EventPlayer._
+
+import scala.concurrent._
+import scala.concurrent.duration._
+import scala.util.Success
+
 
 /**
   * @author Gabriel Francisco <gabfssilva@gmail.com>
@@ -16,35 +22,54 @@ import org.styx.player.EventPlayer._
 class EventSourcingTest extends FeatureSpec with Matchers {
   feature("Creating an account") {
     scenario("assert that replaying restores the actual state of the BankAccount object") {
-      val aggregationId = UUID.randomUUID().toString
+      implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(20))
 
-      val f =
-        createAccount(Request("owner" -> "John Doe", "id" -> 123))
-          .andThen(deposit(Request("amount" -> 20)))
-          .andThen(changeOwner(Request("newOwner" -> "Jane Doe")))
-          .andThen(withdrawal(Request("amount" -> 10)))
-          .andThen(close(Request("reason" -> "Unavailable address")))
+      val result = List.range(0, 2000).map { i =>
+        val aggregationId = UUID.randomUUID().toString
 
-      val actualState: BankAccount = f(BankAccount(aggregationId))
-      val events: Seq[Event[BankAccount]] = eventStore.get(aggregationId)
-      val playedState: BankAccount = events.play(BankAccount(aggregationId))
+        val eventualBankAccount = for {
+          account <- createAccount(Request("owner" -> "John Doe", "id" -> 123))(BankAccount(aggregationId))
+          account <- deposit(Request("amount" -> 20))(account)
+          account <- changeOwner(Request("newOwner" -> "Jane Doe"))(account)
+          account <- withdrawal(Request("amount" -> 10))(account)
+          account <- close(Request("reason" -> "Unavailable address"))(account)
+        } yield account
 
-      actualState shouldEqual playedState
+        val result: Future[BankAccount] = eventualBankAccount
+          .andThen({
+            case Success(state) => eventStore.get(aggregationId).play(BankAccount(aggregationId))
+          })
+
+        eventualBankAccount -> result
+      }
+
+      result.foreach(f => {
+        val eventualActualState = f._1
+        val eventualPlayedState = f._2
+
+        val playedState = Await.result(eventualPlayedState, 60 seconds)
+        val actualState = Await.result(eventualActualState, 60 seconds)
+
+        playedState shouldBe actualState
+      })
     }
+  }
 
-    scenario("withdrawing more money than the balance has should throw an exception") {
-      val aggregationId = UUID.randomUUID().toString
+  scenario("withdrawing more money than the balance has should throw an exception") {
+    implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(3))
 
-      val f =
-        createAccount(Request("owner" -> "John Doe", "id" -> 123))
-          .andThen(deposit(Request("amount" -> 20)))
-          .andThen(changeOwner(Request("newOwner" -> "Jane Doe")))
-          .andThen(withdrawal(Request("amount" -> 10)))
-          .andThen(withdrawal(Request("amount" -> 10)))
-          .andThen(withdrawal(Request("amount" -> 10)))
-          .andThen(close(Request("reason" -> "Unavailable address")))
+    val aggregationId = UUID.randomUUID().toString
 
-      an [InvalidExecutionException] should be thrownBy f(BankAccount(aggregationId))
-    }
+    val eventualBankAccount = for {
+      account <- createAccount(Request("owner" -> "John Doe", "id" -> 123))(BankAccount(aggregationId))
+      account <- deposit(Request("amount" -> 20))(account)
+      account <- changeOwner(Request("newOwner" -> "Jane Doe"))(account)
+      account <- withdrawal(Request("amount" -> 10))(account)
+      account <- withdrawal(Request("amount" -> 10))(account)
+      account <- withdrawal(Request("amount" -> 10))(account)
+      account <- close(Request("reason" -> "Unavailable address"))(account)
+    } yield account
+
+    an[InvalidExecutionException] should be thrownBy Await.result(eventualBankAccount, 1000 millis)
   }
 }

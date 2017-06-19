@@ -1,11 +1,12 @@
 package org.styx.state
 
+import org.styx.model.Event
 import org.styx.state.State.AggregationId
 
 /**
   * @author Gabriel Francisco <gabfssilva@gmail.com>
   */
-object State{
+object State {
   type AggregationId = String
 }
 

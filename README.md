@@ -14,6 +14,8 @@ case class BankAccount(aggregationId: AggregationId) extends DynamicData with St
 
 ```scala
 object BankAccountEventStore {
+  //you can always change the event store implementation, for instance:
+  // implicit val eventStore: EventStore[BankAccount] = new MongoDBEventStore[BankAccount]
   implicit val eventStore: EventStore[BankAccount] = new InMemoryEventStore[BankAccount]
 }
 ```
@@ -21,7 +23,7 @@ object BankAccountEventStore {
 ## The events
 
 ```scala
-case class BankAccountCreated() extends Event[BankAccount] {
+case class BankAccountCreated(override val eventDate: Date = new Date()) extends Event[BankAccount] {
   def applyTo(account: BankAccount): BankAccount = {
     val newAccount = BankAccount(account.aggregationId)
 
@@ -36,7 +38,7 @@ case class BankAccountCreated() extends Event[BankAccount] {
 ```
 
 ```scala
-case class DepositPerformed() extends Event[BankAccount] {
+case class DepositPerformed(override val eventDate: Date = new Date()) extends Event[BankAccount] {
   def applyTo(account: BankAccount): BankAccount = {
     val newAccount = BankAccount(account.aggregationId)
     account copyTo newAccount
@@ -47,7 +49,7 @@ case class DepositPerformed() extends Event[BankAccount] {
 ```
 
 ```scala
-case class OwnerChanged() extends Event[BankAccount] {
+case class OwnerChanged(override val eventDate: Date = new Date()) extends Event[BankAccount] {
   def applyTo(account: BankAccount): BankAccount = {
     val newAccount = BankAccount(account.aggregationId)
     account copyTo newAccount
@@ -58,7 +60,7 @@ case class OwnerChanged() extends Event[BankAccount] {
 ```
 
 ```scala
-case class WithdrawalPerformed() extends Event[BankAccount] {
+case class WithdrawalPerformed(override val eventDate: Date = new Date()) extends Event[BankAccount] {
   def applyTo(account: BankAccount): BankAccount = {
     val newAccount = BankAccount(account.aggregationId)
     account copyTo newAccount
@@ -69,7 +71,7 @@ case class WithdrawalPerformed() extends Event[BankAccount] {
 ```
 
 ```scala
-case class BankAccountClosed() extends Event[BankAccount] {
+case class BankAccountClosed(override val eventDate: Date = new Date()) extends Event[BankAccount] {
   def applyTo(account: BankAccount): BankAccount = {
     val newAccount = BankAccount(account.aggregationId)
     account copyTo newAccount
@@ -83,12 +85,14 @@ case class BankAccountClosed() extends Event[BankAccount] {
 ## The commands
 
 ```scala
-object CreateAccountCommand extends Command[Request, BankAccount] {
+class CreateAccountCommand(implicit override val executionContext: ExecutionContext) extends Command[Request, BankAccount] {
   override def execute: ExecutionProduce = (request) => (_) => {
-    val event = BankAccountCreated()
-    event.id = request.id
-    event.owner = request.owner
-    event
+    Future {
+      val event = BankAccountCreated()
+      event.id = request.id
+      event.owner = request.owner
+      event
+    }
   }
 
   override def validate: ValidationProduce =
@@ -97,31 +101,37 @@ object CreateAccountCommand extends Command[Request, BankAccount] {
 ```
 
 ```scala
-object DepositCommand extends Command[Request, BankAccount] {
+class DepositCommand(implicit override val executionContext: ExecutionContext) extends Command[Request, BankAccount] {
   override def execute: ExecutionProduce = (request) => (_) => {
-    val event = DepositPerformed()
-    event.amount = request.amount
-    event
+    Future {
+      val event = DepositPerformed()
+      event.amount = request.amount
+      event
+    }
   }
 }
 ```
 
 ```scala
-object ChangeOwnerCommand extends Command[Request, BankAccount] {
+class ChangeOwnerCommand(implicit override val executionContext: ExecutionContext) extends Command[Request, BankAccount] {
   override def execute: ExecutionProduce = (request) => (_) => {
-    val event = OwnerChanged()
-    event.newOwner = request.newOwner
-    event
+    Future {
+      val event = OwnerChanged()
+      event.newOwner = request.newOwner
+      event
+    }
   }
 }
 ```
 
 ```scala
-object WithdrawalCommand extends Command[Request, BankAccount] {
+class WithdrawalCommand(implicit override val executionContext: ExecutionContext) extends Command[Request, BankAccount] {
   override def execute: ExecutionProduce = (request) => (_) => {
-    val event = WithdrawalPerformed()
-    event.amount = request.amount
-    event
+    Future {
+      val event = WithdrawalPerformed()
+      event.amount = request.amount
+      event
+    }
   }
 
   override def validate: ValidationProduce =
@@ -131,11 +141,13 @@ object WithdrawalCommand extends Command[Request, BankAccount] {
 ```
 
 ```scala
-object CloseCommand extends Command[Request, BankAccount] {
+class CloseCommand(implicit override val executionContext: ExecutionContext) extends Command[Request, BankAccount] {
   override def execute: ExecutionProduce = (request) => (_) => {
-    val event = BankAccountClosed()
-    event.closeReason = request.reason
-    event
+    Future {
+      val event = BankAccountClosed()
+      event.closeReason = request.reason
+      event
+    }
   }
 
   override def validate: ValidationProduce =
@@ -147,11 +159,13 @@ object CloseCommand extends Command[Request, BankAccount] {
 
 ```scala
 object BankAccountCommands {
-  val createAccount: ExecutionRequest[Request, BankAccount] = CreateAccountCommand
-  val withdrawal: ExecutionRequest[Request, BankAccount] = WithdrawalCommand
-  val deposit: ExecutionRequest[Request, BankAccount] = DepositCommand
-  val changeOwner: ExecutionRequest[Request, BankAccount] = ChangeOwnerCommand
-  val close: ExecutionRequest[Request, BankAccount] = CloseCommand
+  implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(10))
+
+  val createAccount: ExecutionRequest[Request, BankAccount] = new CreateAccountCommand
+  val withdrawal: ExecutionRequest[Request, BankAccount] = new WithdrawalCommand
+  val deposit: ExecutionRequest[Request, BankAccount] = new DepositCommand
+  val changeOwner: ExecutionRequest[Request, BankAccount] = new ChangeOwnerCommand
+  val close: ExecutionRequest[Request, BankAccount] = new CloseCommand
 }
 ```
 
@@ -161,38 +175,56 @@ object BankAccountCommands {
 class EventSourcingTest extends FeatureSpec with Matchers {
   feature("Creating an account") {
     scenario("assert that replaying restores the actual state of the BankAccount object") {
-      val aggregationId = UUID.randomUUID().toString
+      implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(20))
 
-      val f =
-        createAccount(Request("owner" -> "John Doe", "id" -> 123))
-          .andThen(deposit(Request("amount" -> 20)))
-          .andThen(changeOwner(Request("newOwner" -> "Jane Doe")))
-          .andThen(withdrawal(Request("amount" -> 10)))
-          .andThen(close(Request("reason" -> "Unavailable address")))
+      val result = List.range(0, 2000).map { i =>
+        val aggregationId = UUID.randomUUID().toString
 
-      val actualState: BankAccount = f(BankAccount(aggregationId))
-      val events: Seq[Event[BankAccount]] = eventStore.get(aggregationId)
-      val playedState: BankAccount = events.play(BankAccount(aggregationId))
+        val eventualBankAccount = for {
+          account <- createAccount(Request("owner" -> "John Doe", "id" -> 123))(BankAccount(aggregationId))
+          account <- deposit(Request("amount" -> 20))(account)
+          account <- changeOwner(Request("newOwner" -> "Jane Doe"))(account)
+          account <- withdrawal(Request("amount" -> 10))(account)
+          account <- close(Request("reason" -> "Unavailable address"))(account)
+        } yield account
 
-      actualState shouldEqual playedState
-    }
+        val result: Future[BankAccount] = eventualBankAccount
+          .andThen({
+            case Success(state) => eventStore.get(aggregationId).play(BankAccount(aggregationId))
+          })
 
-    scenario("withdrawing more money than the balance has should throw an exception") {
-      val aggregationId = UUID.randomUUID().toString
+        eventualBankAccount -> result
+      }
 
-      val f =
-        createAccount(Request("owner" -> "John Doe", "id" -> 123))
-          .andThen(deposit(Request("amount" -> 20)))
-          .andThen(changeOwner(Request("newOwner" -> "Jane Doe")))
-          .andThen(withdrawal(Request("amount" -> 10)))
-          .andThen(withdrawal(Request("amount" -> 10)))
-          .andThen(withdrawal(Request("amount" -> 10)))
-          .andThen(close(Request("reason" -> "Unavailable address")))
+      result.foreach(f => {
+        val eventualActualState = f._1
+        val eventualPlayedState = f._2
 
-      an [InvalidExecutionException] should be thrownBy f(BankAccount(aggregationId))
+        val playedState = Await.result(eventualPlayedState, 60 seconds)
+        val actualState = Await.result(eventualActualState, 60 seconds)
+
+        playedState shouldBe actualState
+      })
     }
   }
-}
 
+  scenario("withdrawing more money than the balance has should throw an exception") {
+    implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(3))
+
+    val aggregationId = UUID.randomUUID().toString
+
+    val eventualBankAccount = for {
+      account <- createAccount(Request("owner" -> "John Doe", "id" -> 123))(BankAccount(aggregationId))
+      account <- deposit(Request("amount" -> 20))(account)
+      account <- changeOwner(Request("newOwner" -> "Jane Doe"))(account)
+      account <- withdrawal(Request("amount" -> 10))(account)
+      account <- withdrawal(Request("amount" -> 10))(account)
+      account <- withdrawal(Request("amount" -> 10))(account)
+      account <- close(Request("reason" -> "Unavailable address"))(account)
+    } yield account
+
+    an[InvalidExecutionException] should be thrownBy Await.result(eventualBankAccount, 1000 millis)
+  }
+}
 ```
 
