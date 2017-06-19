@@ -1,15 +1,6 @@
 apply plugin: 'scala'
 
 repositories {
-    maven {
-        url "http://nexus.billing.intranet/content/groups/public/"
-
-        credentials {
-            username 'admin'
-            password 'admin123'
-        }
-    }
-
     jcenter()
     mavenLocal()
 }
