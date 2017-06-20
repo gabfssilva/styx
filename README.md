@@ -1,7 +1,27 @@
 # styx
 A simple event sourcing library written in Scala.
 
+
+##What is Event Sourcing?
+
+E.S. is the idea of persisting immutable events of a domain object instead of its actual state: 
+
+Although you can save and get the last state into a database, you can also easily replay the events of the stream to get the state of your domain object. 
+
+
+[!alt text](http://imgur.com/a/03eym)
+
+
+There are a few problems with E.S., such as concurrency and side-effects while replaying your events. Styx can help you build your application using E.S., thus avoiding these common problems. ;) 
+
+
+[!alt text](https://cdn-images-1.medium.com/max/800/1*B__xOZumACYVsfe-YnJLQw.png)
+
+##Example
+
+
 The following example is based on: https://ookami86.github.io/event-sourcing-in-practice/
+
 
 
 ## The state
