@@ -2,7 +2,7 @@
 A simple event sourcing library written in Scala.
 
 
-##What is Event Sourcing?
+## What is Event Sourcing?
 
 E.S. is the idea of persisting immutable events of a domain object instead of its actual state: 
 
@@ -16,7 +16,7 @@ There are a few problems with E.S., such as concurrency and side-effects while r
 
 ![Overview](https://cdn-images-1.medium.com/max/800/1*B__xOZumACYVsfe-YnJLQw.png)
 
-##Example
+## Example
 
 
 The following example is based on: https://ookami86.github.io/event-sourcing-in-practice/
