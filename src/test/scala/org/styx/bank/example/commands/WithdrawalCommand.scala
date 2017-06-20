@@ -9,15 +9,13 @@ import org.styx.bank.example.store.BankAccountEventStore._
 import scala.concurrent.{ExecutionContext, Future}
 
 class WithdrawalCommand(implicit override val executionContext: ExecutionContext) extends Command[Request, BankAccount] {
-  override def execute: ExecutionProduce = (request) => (_) => {
+  override def event: EventProduce = (request) => (state) => {
     Future {
-      val event = WithdrawalPerformed()
+      val event = WithdrawalPerformed(state.lastEventVersion + 1)
       event.amount = request.amount
       event
     }
   }
 
-  override def validate: ValidationProduce =
-    request => state => validation((state.balance[Int] - request.amount[Int]) >= 0,
-      s"the account cannot have a balance lower than zero. current balance: ${state.balance[Int]}, withdrawal amount: ${request.amount[Int]}")
+  override def execute: ExecutionProduce = (request) => (state) => Future.successful()
 }

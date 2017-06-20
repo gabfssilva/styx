@@ -11,6 +11,7 @@ import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.model.IndexOptions
 import org.mongodb.scala.{MongoClient, MongoCollection}
 import org.styx.bank.example.events._
+import org.styx.bank.example.state.BankAccount
 import org.styx.model.Event
 import org.styx.state.State
 
@@ -24,6 +25,7 @@ object MongoDB {
   val client = MongoClient(uri = "mongodb://localhost:27017/?waitqueuemultiple=10000")
 
   def codedProvider: CodecProvider = Macros.createCodecProvider[MongoDBEvent]()
+
   val registries = fromRegistries(fromProviders(codedProvider), DEFAULT_CODEC_REGISTRY)
 
   val db = client.getDatabase("eventSourcingSample").withCodecRegistry(registries)
@@ -32,28 +34,27 @@ object MongoDB {
 
   val indexes = for {
     aggregationId <- collection.createIndex(Document("aggregationId" -> 1), IndexOptions().unique(false))
-  } yield aggregationId
+    aggregationIdAndVersion <- collection.createIndex(Document("aggregationId" -> 1, "version" -> 1), IndexOptions().unique(true))
+  } yield aggregationIdAndVersion
 
   indexes.subscribe((indexes: String) => println("Indexes created:" + indexes))
 
   case class MongoDBEvent(eventType: String,
                           eventDate: Date,
+                          version: Long,
                           aggregationId: String,
                           data: Document)
 
   def convertFromMongoDBEvent[S <: State](mongoDBEvent: MongoDBEvent): Event[S] = {
-    val data = mongoDBEvent.data
-    val eventDate = mongoDBEvent.eventDate
-
     val event: Event[S] = (mongoDBEvent match {
-      case MongoDBEvent("BankAccountCreated", _, _, _) => BankAccountCreated(eventDate)
-      case MongoDBEvent("BankAccountClosed", _, _, _) => BankAccountClosed(eventDate)
-      case MongoDBEvent("OwnerChanged", _, _, _) => OwnerChanged(eventDate)
-      case MongoDBEvent("DepositPerformed", _, _, _) => DepositPerformed(eventDate)
-      case MongoDBEvent("WithdrawalPerformed", _, _, _) => WithdrawalPerformed(eventDate)
+      case MongoDBEvent("BankAccountCreated", eventDate, version, _, _) => BankAccountCreated(version, eventDate)
+      case MongoDBEvent("BankAccountClosed", eventDate, version, _, _) => BankAccountClosed(version, eventDate)
+      case MongoDBEvent("OwnerChanged", eventDate, version, _, _) => OwnerChanged(version, eventDate)
+      case MongoDBEvent("DepositPerformed", eventDate, version, _, _) => DepositPerformed(version, eventDate)
+      case MongoDBEvent("WithdrawalPerformed", eventDate, version, _, _) => WithdrawalPerformed(version, eventDate)
     }).asInstanceOf[Event[S]]
 
-    event.data = objectMapper.readValue(data.toJson(), classOf[Map[String, Any]])
+    event.data = objectMapper.readValue(mongoDBEvent.data.toJson(), classOf[Map[String, Any]])
     event
   }
 }

@@ -9,11 +9,11 @@ import org.styx.bank.example.store.BankAccountEventStore._
 import scala.concurrent.{ExecutionContext, Future}
 
 class ChangeOwnerCommand(implicit override val executionContext: ExecutionContext) extends Command[Request, BankAccount] {
-  override def execute: ExecutionProduce = (request) => (_) => {
-    Future {
-      val event = OwnerChanged()
-      event.newOwner = request.newOwner
-      event
-    }
+  override def execute: ExecutionProduce = (request) => (state) => Future.successful()
+
+  override def event: EventProduce = (request) => (state) => Future {
+    val event = OwnerChanged(state.lastEventVersion + 1)
+    event.newOwner = request.newOwner
+    event
   }
 }

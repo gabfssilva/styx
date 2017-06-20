@@ -11,5 +11,6 @@ object State {
 }
 
 trait State {
+  val lastEventVersion: Long
   val aggregationId: AggregationId
 }

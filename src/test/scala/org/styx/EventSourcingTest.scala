@@ -24,31 +24,29 @@ class EventSourcingTest extends FeatureSpec with Matchers {
     scenario("assert that replaying restores the actual state of the BankAccount object") {
       implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(20))
 
-      val result = List.range(0, 2000).map { i =>
+      val result = List.range(0, 20).map { i =>
         val aggregationId = UUID.randomUUID().toString
 
         val eventualBankAccount = for {
-          account <- createAccount(Request("owner" -> "John Doe", "id" -> 123))(BankAccount(aggregationId))
+          account <- createAccount(Request("owner" -> "John Doe", "id" -> 123))(BankAccount(0, aggregationId))
           account <- deposit(Request("amount" -> 20))(account)
           account <- changeOwner(Request("newOwner" -> "Jane Doe"))(account)
           account <- withdrawal(Request("amount" -> 10))(account)
           account <- close(Request("reason" -> "Unavailable address"))(account)
         } yield account
 
-        val result: Future[BankAccount] = eventualBankAccount
-          .andThen({
-            case Success(state) => eventStore.get(aggregationId).play(BankAccount(aggregationId))
-          })
+        val result: Future[BankAccount] = eventualBankAccount.andThen {
+          case Success(state) => eventStore.get(aggregationId).play(BankAccount(0, aggregationId))
+        }
 
         eventualBankAccount -> result
       }
 
       result.foreach(f => {
-        val eventualActualState = f._1
-        val eventualPlayedState = f._2
+        val (eventualActualState, eventualPlayedState) = f
 
-        val playedState = Await.result(eventualPlayedState, 60 seconds)
-        val actualState = Await.result(eventualActualState, 60 seconds)
+        val playedState = Await.result(eventualPlayedState, 60 minutes)
+        val actualState = Await.result(eventualActualState, 60 minutes)
 
         playedState shouldBe actualState
       })
@@ -61,7 +59,7 @@ class EventSourcingTest extends FeatureSpec with Matchers {
     val aggregationId = UUID.randomUUID().toString
 
     val eventualBankAccount = for {
-      account <- createAccount(Request("owner" -> "John Doe", "id" -> 123))(BankAccount(aggregationId))
+      account <- createAccount(Request("owner" -> "John Doe", "id" -> 123))(BankAccount(0, aggregationId))
       account <- deposit(Request("amount" -> 20))(account)
       account <- changeOwner(Request("newOwner" -> "Jane Doe"))(account)
       account <- withdrawal(Request("amount" -> 10))(account)
@@ -71,5 +69,11 @@ class EventSourcingTest extends FeatureSpec with Matchers {
     } yield account
 
     an[InvalidExecutionException] should be thrownBy Await.result(eventualBankAccount, 1000 millis)
+
+    val eventualSeq = Await.result(eventStore.get(aggregationId), 1 minute)
+    val state = eventualSeq.play(BankAccount(0, aggregationId))
+
+    state.balance[Int] shouldBe 0
+    state.status[String] shouldNot be("CLOSED")
   }
 }

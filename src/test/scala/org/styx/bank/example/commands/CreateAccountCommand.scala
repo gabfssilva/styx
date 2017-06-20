@@ -9,15 +9,14 @@ import org.styx.bank.example.store.BankAccountEventStore._
 import scala.concurrent.{ExecutionContext, Future}
 
 class CreateAccountCommand(implicit override val executionContext: ExecutionContext) extends Command[Request, BankAccount] {
-  override def execute: ExecutionProduce = (request) => (_) => {
+  override def event: EventProduce = (request) => (state) => {
     Future {
-      val event = BankAccountCreated()
+      val event = BankAccountCreated(state.lastEventVersion + 1)
       event.id = request.id
       event.owner = request.owner
       event
     }
   }
 
-  override def validate: ValidationProduce =
-    request => state => validation(state.status == null, "this account is already created")
+  override def execute: ExecutionProduce = (request) => (state) => Future.successful()
 }

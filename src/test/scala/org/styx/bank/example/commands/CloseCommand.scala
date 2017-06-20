@@ -9,14 +9,13 @@ import org.styx.bank.example.store.BankAccountEventStore._
 import scala.concurrent.{ExecutionContext, Future}
 
 class CloseCommand(implicit override val executionContext: ExecutionContext) extends Command[Request, BankAccount] {
-  override def execute: ExecutionProduce = (request) => (_) => {
+  override def event: EventProduce = (request) => (state) => {
     Future {
-      val event = BankAccountClosed()
+      val event = BankAccountClosed(state.lastEventVersion + 1)
       event.closeReason = request.reason
       event
     }
   }
 
-  override def validate: ValidationProduce =
-    request => state => validation(!state.status.equals("CLOSED"), "this account is already closed")
+  override def execute: ExecutionProduce = (request) => (state) => Future.successful()
 }
