@@ -14,7 +14,7 @@ import scala.collection._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 class MongoDBEventHandler[S <: State](implicit val executionContext: ExecutionContext) extends EventHandler[S] {
-  override def add(aggregationId: AggregationId, event: Event[S], actualStatus: S): Future[WriteStatus[S]] = {
+  override def add(aggregationId: AggregationId, event: Event[S], actualState: S): Future[WriteStatus[S]] = {
     val collection: MongoCollection[MongoDB.MongoDBEvent] = MongoDB.collection
 
     collection

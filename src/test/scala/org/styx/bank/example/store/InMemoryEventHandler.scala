@@ -18,7 +18,7 @@ class InMemoryEventHandler[S <: State](implicit val executionContext: ExecutionC
     override def makeSet = scala.collection.mutable.SortedSet[Event[S]]()((x: Event[S], y: Event[S]) => x.eventDate.compareTo(y.eventDate))
   }
 
-  override def add(aggregationId: AggregationId, event: Event[S], actualStatus: S): Future[WriteStatus[S]] = {
+  override def add(aggregationId: AggregationId, event: Event[S], actualState: S): Future[WriteStatus[S]] = {
     def add = {
       events.addBinding(aggregationId, event)
       SuccessfulWrite(event)

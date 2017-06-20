@@ -10,7 +10,7 @@ The following example is based on: https://ookami86.github.io/event-sourcing-in-
 case class BankAccount(aggregationId: AggregationId) extends DynamicData with State
 ```
 
-## The event store
+## The event handler
 
 ```scala
 object BankAccountEventHander {
