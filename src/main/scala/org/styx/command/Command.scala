@@ -5,8 +5,8 @@ import org.styx.exceptions.InvalidExecutionException
 import org.styx.model.Event
 import org.styx.model.Event.Valid
 import org.styx.state.State
-import org.styx.store.EventStore
-import org.styx.store.EventStore.{FailureWrite, SuccessfulWrite}
+import org.styx.handler.EventHandler
+import org.styx.handler.EventHandler.{FailureWrite, SuccessfulWrite}
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
@@ -18,7 +18,7 @@ object Command {
   type ExecutionRequest[R, S <: State] = R => S => Future[S]
 }
 
-abstract class Command[Request, S <: State](implicit val eventStore: EventStore[S], implicit val executionContext: ExecutionContext) extends ExecutionRequest[Request, S] {
+abstract class Command[Request, S <: State](implicit val eventStore: EventHandler[S], implicit val executionContext: ExecutionContext) extends ExecutionRequest[Request, S] {
   type ExecutionProduce = (Event[S]) => (S) => Future[Unit]
   type EventProduce = (Request) => (S) => Future[Event[S]]
 
@@ -35,7 +35,7 @@ abstract class Command[Request, S <: State](implicit val eventStore: EventStore[
           execute(e)(state)
             .flatMap { _ =>
               eventStore
-                .add(actualState.aggregationId, e)
+                .add(actualState.aggregationId, e, state)
                 .map {
                   case SuccessfulWrite(_) => execute(e)(state); state
                   case FailureWrite(ex, _) => throw InvalidExecutionException(s"there was a problem to insert the event into the event store: ${ex.getMessage}")

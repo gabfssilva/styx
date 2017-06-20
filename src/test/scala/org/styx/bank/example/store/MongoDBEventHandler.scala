@@ -7,14 +7,14 @@ import org.styx.bank.example.store.MongoDB.{MongoDBEvent, convertFromMongoDBEven
 import org.styx.model.Event
 import org.styx.state.State
 import org.styx.state.State.AggregationId
-import org.styx.store.EventStore
-import org.styx.store.EventStore.{FailureWrite, SuccessfulWrite, WriteStatus}
+import org.styx.handler.EventHandler
+import org.styx.handler.EventHandler.{FailureWrite, SuccessfulWrite, WriteStatus}
 
 import scala.collection._
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
-class MongoDBEventStore[S <: State](implicit val executionContext: ExecutionContext) extends EventStore[S] {
-  override def add(aggregationId: AggregationId, event: Event[S]): Future[WriteStatus[S]] = {
+class MongoDBEventHandler[S <: State](implicit val executionContext: ExecutionContext) extends EventHandler[S] {
+  override def add(aggregationId: AggregationId, event: Event[S], actualStatus: S): Future[WriteStatus[S]] = {
     val collection: MongoCollection[MongoDB.MongoDBEvent] = MongoDB.collection
 
     collection
