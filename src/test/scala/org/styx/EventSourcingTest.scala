@@ -6,7 +6,7 @@ import java.util.concurrent.Executors
 import org.scalatest.{FeatureSpec, Matchers}
 import org.styx.bank.example.commands.BankAccountCommands._
 import org.styx.bank.example.state.BankAccount
-import org.styx.bank.example.store.BankAccountEventStore._
+import org.styx.bank.example.store.BankAccountEventHandler._
 import org.styx.exceptions.InvalidExecutionException
 import org.styx.model.Request
 import org.styx.player.EventPlayer._
@@ -38,7 +38,7 @@ class EventSourcingTest extends FeatureSpec with Matchers {
 
       an[InvalidExecutionException] should be thrownBy Await.result(eventualBankAccount, 1000 millis)
 
-      val eventualSeq = Await.result(eventStore.get(aggregationId), 1 minute)
+      val eventualSeq = Await.result(eventHandler.get(aggregationId), 1 minute)
       val state = eventualSeq.play(BankAccount(0, aggregationId))
 
       state.balance[Int] shouldBe 0
@@ -62,7 +62,7 @@ class EventSourcingTest extends FeatureSpec with Matchers {
         } yield account
 
         val result: Future[BankAccount] = eventualBankAccount.andThen {
-          case Success(state) => eventStore.get(aggregationId).play(BankAccount(0, aggregationId))
+          case Success(state) => eventHandler.get(aggregationId).play(BankAccount(0, aggregationId))
         }
 
         eventualBankAccount -> result

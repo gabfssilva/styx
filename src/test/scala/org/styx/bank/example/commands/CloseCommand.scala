@@ -4,7 +4,7 @@ import org.styx.bank.example.events.BankAccountClosed
 import org.styx.bank.example.state.BankAccount
 import org.styx.command.Command
 import org.styx.model.Request
-import org.styx.bank.example.store.BankAccountEventStore._
+import org.styx.bank.example.store.BankAccountEventHandler._
 
 import scala.concurrent.{ExecutionContext, Future}
 

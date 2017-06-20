@@ -10,9 +10,9 @@ import scala.concurrent.ExecutionContext
 /**
   * @author Gabriel Francisco <gabfssilva@gmail.com>
   */
-object BankAccountEventStore {
+object BankAccountEventHandler {
   implicit val ec = ExecutionContext.fromExecutor(Executors.newFixedThreadPool(30))
 
-    implicit val eventStore: EventHandler[BankAccount] = new InMemoryEventHandler[BankAccount]
-//  implicit val eventStore: EventHandler[BankAccount] = new MongoDBEventHandler[BankAccount]
+    implicit val eventHandler: EventHandler[BankAccount] = new InMemoryEventHandler[BankAccount]
+//  implicit val eventHandler: EventHandler[BankAccount] = new MongoDBEventHandler[BankAccount]
 }

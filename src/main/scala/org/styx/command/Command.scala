@@ -18,7 +18,7 @@ object Command {
   type ExecutionRequest[R, S <: State] = R => S => Future[S]
 }
 
-abstract class Command[Request, S <: State](implicit val eventStore: EventHandler[S], implicit val executionContext: ExecutionContext) extends ExecutionRequest[Request, S] {
+abstract class Command[Request, S <: State](implicit val eventHandler: EventHandler[S], implicit val executionContext: ExecutionContext) extends ExecutionRequest[Request, S] {
   type ExecutionProduce = (Event[S]) => (S) => Future[Unit]
   type EventProduce = (Request) => (S) => Future[Event[S]]
 
@@ -34,7 +34,7 @@ abstract class Command[Request, S <: State](implicit val eventStore: EventHandle
 
           execute(e)(state)
             .flatMap { _ =>
-              eventStore
+              eventHandler
                 .add(actualState.aggregationId, e, state)
                 .map {
                   case SuccessfulWrite(_) => execute(e)(state); state

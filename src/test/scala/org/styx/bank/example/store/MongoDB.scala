@@ -11,13 +11,9 @@ import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.model.IndexOptions
 import org.mongodb.scala.{MongoClient, MongoCollection}
 import org.styx.bank.example.events._
-import org.styx.bank.example.state.BankAccount
 import org.styx.model.Event
 import org.styx.state.State
 
-/**
-  * @author Gabriel Francisco <peo_gfsilva@uolinc.com>
-  */
 object MongoDB {
   val objectMapper = new ObjectMapper
   objectMapper.registerModule(DefaultScalaModule)

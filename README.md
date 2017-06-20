@@ -13,10 +13,10 @@ case class BankAccount(aggregationId: AggregationId) extends DynamicData with St
 ## The event store
 
 ```scala
-object BankAccountEventStore {
+object BankAccountEventHander {
   //you can always change the event store implementation, for instance:
-  // implicit val eventStore: EventStore[BankAccount] = new MongoDBEventStore[BankAccount]
-  implicit val eventStore: EventStore[BankAccount] = new InMemoryEventStore[BankAccount]
+  // implicit val eventHandler: EventHander[BankAccount] = new MongoDBEventHander[BankAccount]
+  implicit val eventHandler: EventHander[BankAccount] = new InMemoryEventHander[BankAccount]
 }
 ```
 
@@ -192,7 +192,7 @@ class EventSourcingTest extends FeatureSpec with Matchers {
         } yield account
 
         val result: Future[BankAccount] = eventualBankAccount.andThen {
-          case Success(state) => eventStore.get(aggregationId).play(BankAccount(0, aggregationId))
+          case Success(state) => eventHandler.get(aggregationId).play(BankAccount(0, aggregationId))
         }
 
         eventualBankAccount -> result
@@ -226,7 +226,7 @@ class EventSourcingTest extends FeatureSpec with Matchers {
 
     an[InvalidExecutionException] should be thrownBy Await.result(eventualBankAccount, 1000 millis)
 
-    val eventualSeq = Await.result(eventStore.get(aggregationId), 1 minute)
+    val eventualSeq = Await.result(eventHandler.get(aggregationId), 1 minute)
     val state = eventualSeq.play(BankAccount(0, aggregationId))
 
     state.balance[Int] shouldBe 0
