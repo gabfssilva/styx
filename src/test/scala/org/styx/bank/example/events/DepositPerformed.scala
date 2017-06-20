@@ -4,7 +4,6 @@ import java.util.Date
 
 import org.styx.bank.example.state.BankAccount
 import org.styx.model.Event
-import org.styx.model.Event.Valid
 
 case class DepositPerformed(override val version: Long, override val eventDate: Date = new Date()) extends Event[BankAccount](version) {
   def applyTo(account: BankAccount): BankAccount = {
