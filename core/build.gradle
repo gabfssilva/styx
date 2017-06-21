@@ -1,0 +1,26 @@
+apply plugin: 'scala'
+
+repositories {
+    jcenter()
+    mavenLocal()
+}
+
+def scalaVersion = '_2.12'
+def mongoDbScalaVersion = '2.0.0'
+def jacksonVersion = '2.8.8'
+
+dependencies {
+    compile 'org.scala-lang:scala-library:2.12.2'
+
+    testCompile 'com.google.guava:guava:22.0'
+
+    //jackson
+    testCompile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion
+    testCompile group: 'com.fasterxml.jackson.module', name: "jackson-module-scala$scalaVersion", version: jacksonVersion
+
+    testCompile "org.mongodb.scala:mongo-scala-driver$scalaVersion:$mongoDbScalaVersion"
+
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.scalatest:scalatest_2.12:3.0.1'
+    testRuntime 'org.scala-lang.modules:scala-xml_2.12:1.0.5'
+}
