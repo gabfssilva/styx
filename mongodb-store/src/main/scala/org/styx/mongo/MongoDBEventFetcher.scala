@@ -33,11 +33,11 @@ trait MongoDBEventFetcher[S <: State] extends EventFetcher[S] {
 }
 
 object MongoDBEventFetcher {
-  def apply[S <: State](collection: MongoCollection[MongoDBEvent],
-                        objectMapper: ObjectMapper,
-                        converter: (MongoDBEvent => Event[S])): MongoDBEventFetcher[S] = new MongoDBEventFetcher[S]() {
-    override val collection: MongoCollection[MongoDBEvent] = collection
-    override val objectMapper: ObjectMapper = objectMapper
-    override val converter: (MongoDBEvent) => Event[S] = converter
+  def apply[S <: State](col: MongoCollection[MongoDBEvent],
+                        mapper: ObjectMapper,
+                        eventConverter: (MongoDBEvent => Event[S])): MongoDBEventFetcher[S] = new MongoDBEventFetcher[S]() {
+    override val collection: MongoCollection[MongoDBEvent] = col
+    override val objectMapper: ObjectMapper = mapper
+    override val converter: (MongoDBEvent) => Event[S] = eventConverter
   }
 }

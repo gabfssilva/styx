@@ -1,10 +1,5 @@
 apply plugin: 'scala'
 
-repositories {
-    jcenter()
-    mavenLocal()
-}
-
 def scalaVersion = '_2.12'
 def mongoDbScalaVersion = '2.0.0'
 def jacksonVersion = '2.8.8'

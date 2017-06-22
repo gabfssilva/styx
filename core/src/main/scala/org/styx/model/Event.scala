@@ -9,7 +9,7 @@ object Event {
   case class Valid(value: Boolean, message: () => String)
 }
 
-abstract class Event[S <: State](val version: Long,
+abstract class Event[S <: State](val revision: Long,
                                  val eventDate: Date = new Date()) extends DynamicData {
   def validation(validExpression: Boolean, message: => String) = Valid(validExpression, () => message)
 
@@ -22,12 +22,12 @@ abstract class Event[S <: State](val version: Long,
   override def canEqual(other: Any): Boolean = other.isInstanceOf[Event[S]]
 
   override def equals(other: Any): Boolean = other match {
-    case that: Event[S] => (that canEqual this) && version == that.version
+    case that: Event[S] => (that canEqual this) && revision == that.revision
     case _ => false
   }
 
   override def hashCode(): Int = {
-    val state = Seq(super.hashCode(), version)
+    val state = Seq(super.hashCode(), revision)
     state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
   }
 }

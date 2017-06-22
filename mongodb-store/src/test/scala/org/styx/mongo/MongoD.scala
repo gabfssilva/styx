@@ -39,7 +39,7 @@ object MongoD {
   val collection: MongoCollection[MongoDBEvent] = db.getCollection("bankAccountEvents")
 
   val indexes = for {
-    aggregationIdAndVersion <- collection.createIndex(Document("aggregationId" -> 1, "version" -> 1), IndexOptions().unique(true))
+    aggregationIdAndVersion <- collection.createIndex(Document("aggregationId" -> 1, "revision" -> 1), IndexOptions().unique(true))
   } yield aggregationIdAndVersion
 
   indexes.subscribe((indexes: String) => println("Indexes created:" + indexes))

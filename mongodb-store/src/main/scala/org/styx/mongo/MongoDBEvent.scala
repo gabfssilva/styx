@@ -6,6 +6,6 @@ import org.mongodb.scala.Document
 
 case class MongoDBEvent(eventType: String,
                         eventDate: Date,
-                        version: Long,
+                        revision: Long,
                         aggregationId: String,
                         data: Document)

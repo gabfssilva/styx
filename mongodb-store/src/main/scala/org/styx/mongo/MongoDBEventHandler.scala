@@ -26,7 +26,7 @@ trait MongoDBEventHandler[S <: State] extends EventHandler[S] {
           aggregationId = aggregationId,
           data = RawBsonDocument.parse(objectMapper.writeValueAsString(event.data)),
           eventDate = event.eventDate,
-          version = event.version
+          revision = event.revision
         )
       }.head
       .map { case Completed() => SuccessfullyHandled(event) }

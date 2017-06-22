@@ -30,7 +30,7 @@ class InMemoryEventHandler[S <: State]
       events.synchronized {
         events.get(aggregationId) match {
           case Some(eventList) =>
-            if (eventList.exists(e => e.version == event.version)) {
+            if (eventList.exists(e => e.revision == event.revision)) {
               UnsuccessfullyHandled(new RuntimeException("optimistic lock exception"), event)
             } else {
               add

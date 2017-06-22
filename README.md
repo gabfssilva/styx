@@ -42,9 +42,9 @@ object BankAccountEventHander {
 ## The events
 
 ```scala
-case class BankAccountCreated(override val version: Long, override val eventDate: Date = new Date()) extends Event[BankAccount](version) {
+case class BankAccountCreated(override val revision: Long, override val eventDate: Date = new Date()) extends Event[BankAccount](revision) {
   def applyTo(account: BankAccount): BankAccount = {
-    val newAccount = BankAccount(version, account.aggregationId)
+    val newAccount = BankAccount(revision, account.aggregationId)
     newAccount.balance = 0
     newAccount.id = this.id
     newAccount.status = "ACTIVE"
@@ -57,9 +57,9 @@ case class BankAccountCreated(override val version: Long, override val eventDate
 ```
 
 ```scala
-case class DepositPerformed(override val version: Long, override val eventDate: Date = new Date()) extends Event[BankAccount](version) {
+case class DepositPerformed(override val revision: Long, override val eventDate: Date = new Date()) extends Event[BankAccount](revision) {
   def applyTo(account: BankAccount): BankAccount = {
-    val newAccount = BankAccount(version, account.aggregationId)
+    val newAccount = BankAccount(revision, account.aggregationId)
     account copyTo newAccount
     newAccount.balance = account.balance[Int] + this.amount[Int]
     newAccount
@@ -68,9 +68,9 @@ case class DepositPerformed(override val version: Long, override val eventDate: 
 ```
 
 ```scala
-case class OwnerChanged(override val version: Long, override val eventDate: Date = new Date()) extends Event[BankAccount](version) {
+case class OwnerChanged(override val revision: Long, override val eventDate: Date = new Date()) extends Event[BankAccount](revision) {
   def applyTo(account: BankAccount): BankAccount = {
-    val newAccount = BankAccount(version, account.aggregationId)
+    val newAccount = BankAccount(revision, account.aggregationId)
     account copyTo newAccount
     newAccount.owner = this.newOwner
     newAccount
@@ -79,9 +79,9 @@ case class OwnerChanged(override val version: Long, override val eventDate: Date
 ```
 
 ```scala
-case class WithdrawalPerformed(override val version: Long, override val eventDate: Date = new Date()) extends Event[BankAccount](version) {
+case class WithdrawalPerformed(override val revision: Long, override val eventDate: Date = new Date()) extends Event[BankAccount](revision) {
   def applyTo(account: BankAccount): BankAccount = {
-    val newAccount = BankAccount(version, account.aggregationId)
+    val newAccount = BankAccount(revision, account.aggregationId)
     account copyTo newAccount
     newAccount.balance = account.balance[Int] - this.amount[Int]
     newAccount
@@ -93,9 +93,9 @@ case class WithdrawalPerformed(override val version: Long, override val eventDat
 ```
 
 ```scala
-case class BankAccountClosed(override val version: Long, override val eventDate: Date = new Date()) extends Event[BankAccount](version) {
+case class BankAccountClosed(override val revision: Long, override val eventDate: Date = new Date()) extends Event[BankAccount](revision) {
   def applyTo(account: BankAccount): BankAccount = {
-    val newAccount = BankAccount(version, account.aggregationId)
+    val newAccount = BankAccount(revision, account.aggregationId)
     account copyTo newAccount
     newAccount.closeReason = this.closeReason
     newAccount.status = "CLOSED"
