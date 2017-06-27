@@ -5,6 +5,8 @@ def mongoDbScalaVersion = '2.0.0'
 def jacksonVersion = '2.8.8'
 
 dependencies {
+    compile project(':core')
+
     compile 'org.scala-lang:scala-library:2.12.2'
 
     compile group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: jacksonVersion

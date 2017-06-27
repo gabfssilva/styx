@@ -25,7 +25,7 @@ class EventSourcingTest extends FeatureSpec with Matchers {
 
     val aggregationId = UUID.randomUUID().toString
 
-    val result = List.range(0, 500).map { i =>
+    List.range(0, 500).map { i =>
       val eventualBankAccount = for {
         account <- createAccount(Request("owner" -> "John Doe", "id" -> 123))(BankAccount(0, aggregationId))
         account <- deposit(Request("amount" -> 20))(account)
