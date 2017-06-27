@@ -6,4 +6,10 @@ node {
     stage('Gradle build') {
          sh './gradlew clean build'
     }
+
+    post {
+        always {
+            junit '*/build/reports/**/*.xml'
+        }
+    }
 }
