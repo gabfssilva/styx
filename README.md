@@ -1,7 +1,6 @@
 # styx
 A simple event sourcing library written in Scala.
 
-
 ## What is Event Sourcing?
 
 E.S. is the idea of persisting immutable events of a domain object instead of its actual state: 
